@@ -24,11 +24,13 @@ const nextConfig = {
         hostname: 'images.unsplash.com',
         pathname: '**',
       },
-
+      
     ],
   },
 };
 
 export default nextConfig;
+
+
 
 
