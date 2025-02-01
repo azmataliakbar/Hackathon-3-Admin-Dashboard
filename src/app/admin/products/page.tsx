@@ -1,161 +1,62 @@
-"use client"
-
-import Header1 from "../../components/Header1"
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
-import type { Product } from "@/app/components/interface"
 import { client } from "@/sanity/lib/client"
-import { motion } from "framer-motion"
+import Header1 from "../../components/Header1"
 
-export default function AdminPanel() {
-  const [products, setProducts] = useState<Product[]>([])
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
-  const [searchQuery, setSearchQuery] = useState<string>("")
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
+interface Product {
+  id: string
+  name: string
+  price: number
+  image: string
+  category: string
+  stockLevel: number
+  isFeaturedProduct: boolean
+}
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setIsLoading(true)
-        setError(null)
-        console.log("Fetching products...") // Debug log
+export default async function ProductPage() {
+  try {
+    const query = `*[_type == "product"] {
+      id,
+      name,
+      "slug": slug.current,
+      description,
+      price,
+      discountPercentage,
+      "image": image.asset->url,
+      category,
+      stockLevel,
+      isFeaturedProduct,
+      colors,
+    }`
 
-        const query = `*[_type == "product"] {
-          id,
-          name,
-          "slug": slug.current,
-          description,
-          price,
-          discountPercentage,
-          "image": image.asset->url,
-          category,
-          stockLevel,
-          isFeaturedProduct,
-          colors,
-        }`
+    const products: Product[] = await client.fetch(query)
 
-        console.log("Sanity Client:", client) // Debug log
-        const result = await client.fetch(query)
-        console.log("Fetched products:", result) // Debug log
+    return (
+      <>
+        <Header1 />
+        <div className="relative flex min-h-screen bg-gradient-to-br from-yellow-50 to-yellow-100 overflow-hidden rounded-lg">
+          <main className="flex-1 p-4 z-10 overflow-auto">
+            <div className="flex flex-col md:flex-row items-start justify-between mb-8 py-2">
+              <h1 className="text-3xl md:text-5xl font-extrabold text-blue-500 mb-4 hover:text-green-500">Products</h1>
+            </div>
 
-        if (!result || !Array.isArray(result)) {
-          throw new Error("Invalid response format from Sanity")
-        }
-
-        setProducts(result)
-        setFilteredProducts(result)
-      } catch (error) {
-        console.error("Error fetching products:", error)
-        setError(error instanceof Error ? error.message : "An unknown error occurred")
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchProducts()
-  }, [])
-
-  const handleSearch = (query: string) => {
-    setSearchQuery(query)
-    const filtered = products.filter(
-      (product) =>
-        product.name.toLowerCase().includes(query.toLowerCase()) ||
-        (product.colors?.join(", ") || "").toLowerCase().includes(query.toLowerCase()),
-    )
-    setFilteredProducts(filtered)
-  }
-
-  const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn")
-    router.push("/")
-  }
-
-  if (isLoading) {
-    return <div className="text-center p-4">Loading products...</div>
-  }
-
-  if (error) {
-    return <div className="text-center p-4 text-red-500">Error: {error}</div>
-  }
-
-  return (
-    <>
-      <Header1 />
-      <div className="relative flex min-h-screen bg-gradient-to-br from-yellow-50 to-yellow-100 overflow-hidden rounded-lg">
-        <motion.main
-          className="flex-1 p-4 z-10 overflow-auto"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-        >
-          <div className="flex flex-col md:flex-row items-start justify-between mb-8 py-2">
-            <motion.h1
-              className="text-3xl md:text-5xl font-extrabold text-blue-500 mb-4 hover:text-green-500"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-            >
-              Products
-            </motion.h1>
-            <motion.button
-              onClick={handleLogout}
-              className="px-4 py-2 md:px-6 md:py-3 bg-red-600 text-white rounded-lg shadow-lg hover:bg-red-700 transition-all transform hover:scale-105"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 200 }}
-            >
-              Logout
-            </motion.button>
-          </div>
-
-          <motion.div
-            className="mb-6 w-full"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-          >
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
-              placeholder="Search products by bed / chair / sofa / table ..."
-              className="w-full p-3 md:p-4 border rounded-lg shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-            />
-          </motion.div>
-
-          <motion.div
-            className="overflow-auto bg-white shadow-xl rounded-xl w-full"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
-          >
-            <div className="overflow-x-auto">
-              <table className="w-full table-auto border-collapse">
-                <thead className="bg-gradient-to-r from-gray-700 via-gray-800 to-gray-700 text-white">
-                  <tr>
-                    <th className="p-2 md:p-4 text-left">Image</th>
-                    <th className="p-2 md:p-4 text-left">Name</th>
-                    <th className="p-2 md:p-4 text-left hidden md:table-cell">Price</th>
-                    <th className="p-2 md:p-4 text-left hidden md:table-cell">Category</th>
-                    <th className="p-2 md:p-4 text-left hidden md:table-cell">Stock Level</th>
-                    <th className="p-2 md:p-4 text-left hidden md:table-cell">Is Featured</th>
-                    <th className="p-2 md:p-4 text-left">Details</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredProducts.length > 0 ? (
-                    filteredProducts.map((product) => (
-                      <motion.tr
-                        key={product.id}
-                        className="border-b hover:bg-gray-100 transition-all"
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.3, duration: 0.5 }}
-                      >
+            <div className="overflow-auto bg-white shadow-xl rounded-xl w-full">
+              <div className="overflow-x-auto">
+                <table className="w-full table-auto border-collapse">
+                  <thead className="bg-gradient-to-r from-gray-700 via-gray-800 to-gray-700 text-white">
+                    <tr>
+                      <th className="p-2 md:p-4 text-left">Image</th>
+                      <th className="p-2 md:p-4 text-left">Name</th>
+                      <th className="p-2 md:p-4 text-left hidden md:table-cell">Price</th>
+                      <th className="p-2 md:p-4 text-left hidden md:table-cell">Category</th>
+                      <th className="p-2 md:p-4 text-left hidden md:table-cell">Stock Level</th>
+                      <th className="p-2 md:p-4 text-left hidden md:table-cell">Is Featured</th>
+                      <th className="p-2 md:p-4 text-left">Details</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {products.map((product) => (
+                      <tr key={product.id} className="border-b hover:bg-gray-100 transition-all">
                         <td className="p-2 md:p-4">
                           <div className="h-16 w-16 md:h-20 md:w-20 rounded-full overflow-hidden border border-gray-300 relative">
                             <Image
@@ -168,7 +69,9 @@ export default function AdminPanel() {
                           </div>
                         </td>
                         <td className="p-2 md:p-4 font-bold text-gray-700">{product.name}</td>
-                        <td className="p-2 md:p-4 font-bold text-green-600 hidden md:table-cell">${product.price}</td>
+                        <td className="p-2 md:p-4 font-bold text-green-600 hidden md:table-cell">
+                          ${product.price.toFixed(2)}
+                        </td>
                         <td className="p-2 md:p-4 font-medium text-gray-700 hidden md:table-cell">
                           {product.category || "N/A"}
                         </td>
@@ -185,27 +88,30 @@ export default function AdminPanel() {
                             </span>
                           </Link>
                         </td>
-                      </motion.tr>
-                    ))
-                  ) : (
-                    <motion.tr
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.6, duration: 0.5 }}
-                    >
-                      <td colSpan={7} className="p-4 text-center text-gray-500">
-                        No products found.
-                      </td>
-                    </motion.tr>
-                  )}
-                </tbody>
-              </table>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </motion.div>
-        </motion.main>
+          </main>
+        </div>
+        <h6 className="text-gray-300 text-center">Author: Azmat Ali</h6>
+      </>
+    )
+  } catch (error) {
+    console.error("Error fetching products:", error)
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-red-50">
+        <div className="text-center p-8 bg-white rounded-lg shadow-xl">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Products</h2>
+          <p className="text-gray-600 mb-4">We are sorry, but there was an error fetching the products.</p>
+          <p className="text-sm text-gray-500">Please try again later or contact support if the problem persists.</p>
+        </div>
       </div>
-      <h6 className="text-gray-300 text-center">Author: Azmat Ali</h6>
-    </>
-  )
+    )
+  }
 }
+
+
 
