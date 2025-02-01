@@ -1,11 +1,11 @@
 import Image from "next/image";
-import {client} from "../../sanity/lib/client"; // Import the Sanity client
+import axios from "axios";
 
 interface Product {
-  id: string;
+  id: string; // id is a string, as per the data you're receiving
   name: string;
-  price: string;
-  image: string;
+  price: string; // price is returned as a string, not number
+  imagePath: string; // Correct field name from the API response
   description: string;
   discountPercentage: number;
   isFeaturedProduct: boolean;
@@ -15,34 +15,19 @@ interface Product {
 
 const TestPage = async () => {
   try {
-    // GROQ query to fetch product data from Sanity
-    const query = `*[_type == "product"] {
-      id,
-      name,
-      "slug": slug.current,
-      description,
-      price,
-      discountPercentage,
-      "image": image.asset->url,
-      category,
-      stockLevel,
-      isFeaturedProduct,
-      colors,
-    }`;
-
-    // Fetch data from Sanity
-    const products: Product[] = await client.fetch(query);
+    const response = await axios.get<Product[]>("https://template-0-beta.vercel.app/api/product");
+    const products = response.data;
 
     return (
       <div style={{ textAlign: "center", padding: "20px" }}>
         <h1>Test API Fetching</h1>
-        <p>Below are the products fetched from Sanity:</p>
+        <p>Below are the products fetched from the API:</p>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px", justifyContent: "center" }}>
           {products.map((product) => (
             <div key={product.id} style={{ border: "1px solid #ccc", padding: "10px", borderRadius: "10px" }}>
               <Image
-                src={product.image} // Using the correct field for the image URL
+                src={product.imagePath} // Using the correct field for the image URL
                 alt={product.name}
                 width={200}
                 height={150}
@@ -67,3 +52,8 @@ const TestPage = async () => {
 };
 
 export default TestPage;
+
+
+
+
+
