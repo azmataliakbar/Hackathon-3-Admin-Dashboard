@@ -1,3 +1,5 @@
+// src/app/admin/products/page.tsx
+
 "use client";
 import Header1 from "../../components/Header1";
 import { useEffect, useState } from "react";
@@ -12,7 +14,6 @@ export default function AdminPanel() {
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
-
   const router = useRouter();
 
   useEffect(() => {
