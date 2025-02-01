@@ -1,23 +1,29 @@
-"use client";
-import Header1 from "../../components/Header1";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
-import Link from "next/link";
-import { Product } from "@/app/components/interface";
-import { client } from "@/sanity/lib/client";
-import { motion } from "framer-motion";
+"use client"
+
+import Header1 from "../../components/Header1"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import Image from "next/image"
+import Link from "next/link"
+import type { Product } from "@/app/components/interface"
+import { client } from "@/sanity/lib/client"
+import { motion } from "framer-motion"
 
 export default function AdminPanel() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
-  const [searchQuery, setSearchQuery] = useState<string>("");
-
-  const router = useRouter();
+  const [products, setProducts] = useState<Product[]>([])
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
+  const [searchQuery, setSearchQuery] = useState<string>("")
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
+        setIsLoading(true)
+        setError(null)
+        console.log("Fetching products...") // Debug log
+
         const query = `*[_type == "product"] {
           id,
           name,
@@ -30,39 +36,56 @@ export default function AdminPanel() {
           stockLevel,
           isFeaturedProduct,
           colors,
-        }`;
-        const result = await client.fetch(query);
-        console.log("Fetched products:", result); // Debugging log
-        setProducts(result);
-        setFilteredProducts(result);
-      } catch (error) {
-        console.error("Error fetching products:", error); // Debugging log
-      }
-    };
+        }`
 
-    fetchProducts();
-  }, []);
+        console.log("Sanity Client:", client) // Debug log
+        const result = await client.fetch(query)
+        console.log("Fetched products:", result) // Debug log
+
+        if (!result || !Array.isArray(result)) {
+          throw new Error("Invalid response format from Sanity")
+        }
+
+        setProducts(result)
+        setFilteredProducts(result)
+      } catch (error) {
+        console.error("Error fetching products:", error)
+        setError(error instanceof Error ? error.message : "An unknown error occurred")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchProducts()
+  }, [])
 
   const handleSearch = (query: string) => {
-    setSearchQuery(query);
+    setSearchQuery(query)
     const filtered = products.filter(
       (product) =>
         product.name.toLowerCase().includes(query.toLowerCase()) ||
-        (product.colors?.join(", ") || "").toLowerCase().includes(query.toLowerCase())
-    );
-    setFilteredProducts(filtered);
-  };
+        (product.colors?.join(", ") || "").toLowerCase().includes(query.toLowerCase()),
+    )
+    setFilteredProducts(filtered)
+  }
 
   const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn");
-    router.push("/");
-  };
+    localStorage.removeItem("isLoggedIn")
+    router.push("/")
+  }
+
+  if (isLoading) {
+    return <div className="text-center p-4">Loading products...</div>
+  }
+
+  if (error) {
+    return <div className="text-center p-4 text-red-500">Error: {error}</div>
+  }
 
   return (
     <>
       <Header1 />
       <div className="relative flex min-h-screen bg-gradient-to-br from-yellow-50 to-yellow-100 overflow-hidden rounded-lg">
-        {/* Main Content */}
         <motion.main
           className="flex-1 p-4 z-10 overflow-auto"
           initial={{ opacity: 0 }}
@@ -89,7 +112,6 @@ export default function AdminPanel() {
             </motion.button>
           </div>
 
-          {/* Search Bar */}
           <motion.div
             className="mb-6 w-full"
             initial={{ opacity: 0, y: -20 }}
@@ -105,7 +127,6 @@ export default function AdminPanel() {
             />
           </motion.div>
 
-          {/* Products Table */}
           <motion.div
             className="overflow-auto bg-white shadow-xl rounded-xl w-full"
             initial={{ opacity: 0 }}
@@ -146,12 +167,8 @@ export default function AdminPanel() {
                             />
                           </div>
                         </td>
-                        <td className="p-2 md:p-4 font-bold text-gray-700">
-                          {product.name}
-                        </td>
-                        <td className="p-2 md:p-4 font-bold text-green-600 hidden md:table-cell">
-                          ${product.price}
-                        </td>
+                        <td className="p-2 md:p-4 font-bold text-gray-700">{product.name}</td>
+                        <td className="p-2 md:p-4 font-bold text-green-600 hidden md:table-cell">${product.price}</td>
                         <td className="p-2 md:p-4 font-medium text-gray-700 hidden md:table-cell">
                           {product.category || "N/A"}
                         </td>
@@ -162,15 +179,10 @@ export default function AdminPanel() {
                           {product.isFeaturedProduct ? "Yes" : "No"}
                         </td>
                         <td className="p-2 md:p-4">
-                          <Link href="/admin/categories">
-                            <button
-                              onClick={() => {
-                                /* Add view details handler */
-                              }}
-                              className="text-blue-600 hover:text-blue-800 font-semibold transition-all"
-                            >
+                          <Link href={`/admin/item/${product.id}`}>
+                            <span className="text-blue-600 hover:text-blue-800 font-semibold transition-all cursor-pointer">
                               View Details
-                            </button>
+                            </span>
                           </Link>
                         </td>
                       </motion.tr>
@@ -194,5 +206,6 @@ export default function AdminPanel() {
       </div>
       <h6 className="text-gray-300 text-center">Author: Azmat Ali</h6>
     </>
-  );
+  )
 }
+
