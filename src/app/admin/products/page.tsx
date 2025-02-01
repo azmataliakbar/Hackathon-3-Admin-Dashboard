@@ -17,24 +17,28 @@ export default function AdminPanel() {
   const router = useRouter();
 
   useEffect(() => {
-    // Fetch products from Sanity
     const fetchProducts = async () => {
-      const query = `*[_type == "product"] {
-        id,
-        name,
-        "slug": slug.current,
-        description,
-        price,
-        discountPercentage,
-        "image": image.asset->url,
-        category,
-        stockLevel,
-        isFeaturedProduct,
-        colors,
-      }`;
-      const result = await client.fetch(query);
-      setProducts(result);
-      setFilteredProducts(result);
+      try {
+        const query = `*[_type == "product"] {
+          id,
+          name,
+          "slug": slug.current,
+          description,
+          price,
+          discountPercentage,
+          "image": image.asset->url,
+          category,
+          stockLevel,
+          isFeaturedProduct,
+          colors,
+        }`;
+        const result = await client.fetch(query);
+        console.log("Fetched products:", result); // Debugging log
+        setProducts(result);
+        setFilteredProducts(result);
+      } catch (error) {
+        console.error("Error fetching products:", error); // Debugging log
+      }
     };
 
     fetchProducts();
