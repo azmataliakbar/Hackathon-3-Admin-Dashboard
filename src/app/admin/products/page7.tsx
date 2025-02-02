@@ -15,8 +15,6 @@ interface Product {
 
 export default async function ProductPage() {
   try {
-    console.log("Fetching products...")
-
     const query = `*[_type == "product"] {
       id,
       name,
@@ -31,20 +29,7 @@ export default async function ProductPage() {
       colors,
     }`
 
-    console.log("Sanity Client Config:", JSON.stringify(client.config(), null, 2))
-
     const products: Product[] = await client.fetch(query)
-
-    console.log(`Fetched ${products.length} products`)
-
-    if (!products || products.length === 0) {
-      throw new Error("No products found")
-    }
-
-    // Remove duplicates based on id
-    const uniqueProducts = Array.from(new Map(products.map((item) => [item.id, item])).values())
-
-    console.log(`Unique products: ${uniqueProducts.length}`)
 
     return (
       <>
@@ -70,7 +55,7 @@ export default async function ProductPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {uniqueProducts.map((product) => (
+                    {products.map((product) => (
                       <tr key={product.id} className="border-b hover:bg-gray-100 transition-all">
                         <td className="p-2 md:p-4">
                           <div className="h-16 w-16 md:h-20 md:w-20 rounded-full overflow-hidden border border-gray-300 relative">
@@ -121,14 +106,12 @@ export default async function ProductPage() {
         <div className="text-center p-8 bg-white rounded-lg shadow-xl">
           <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Products</h2>
           <p className="text-gray-600 mb-4">We are sorry, but there was an error fetching the products.</p>
-          <p className="text-sm text-gray-500 mb-4">
-            Error details: {error instanceof Error ? error.message : String(error)}
-          </p>
           <p className="text-sm text-gray-500">Please try again later or contact support if the problem persists.</p>
         </div>
       </div>
     )
   }
 }
+
 
 

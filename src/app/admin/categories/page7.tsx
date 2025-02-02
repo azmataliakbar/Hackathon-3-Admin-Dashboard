@@ -1,3 +1,5 @@
+// categories/page.tsx
+
 import Image from "next/image"
 import { client } from "@/sanity/lib/client"
 import { Button } from "@/components/ui/button"
@@ -21,8 +23,6 @@ const categories = ["bed", "chair", "sofa", "table", "uncategorized"]
 
 export default async function Category() {
   try {
-    console.log("Fetching products for categories...")
-
     const query = `*[_type == "product"] {
       id,
       name,
@@ -37,22 +37,9 @@ export default async function Category() {
       colors
     }`
 
-    console.log("Sanity Client Config:", JSON.stringify(client.config(), null, 2))
-
     const products: Product[] = await client.fetch(query)
 
-    console.log(`Fetched ${products.length} products`)
-
-    if (!products || products.length === 0) {
-      throw new Error("No products found")
-    }
-
-    // Remove duplicates based on id
-    const uniqueProducts = Array.from(new Map(products.map((item) => [item.id, item])).values())
-
-    console.log(`Unique products: ${uniqueProducts.length}`)
-
-    const normalizedProducts = uniqueProducts.map((product) => ({
+    const normalizedProducts = products.map((product) => ({
       ...product,
       category: (product.category || "uncategorized").toLowerCase(),
       price: Number(product.price) || 0,
@@ -143,9 +130,6 @@ export default async function Category() {
           <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Categories</h2>
           <p className="text-gray-600 mb-4">
             We are sorry, but there was an error fetching the categories and products.
-          </p>
-          <p className="text-sm text-gray-500 mb-4">
-            Error details: {error instanceof Error ? error.message : String(error)}
           </p>
           <p className="text-sm text-gray-500">Please try again later or contact support if the problem persists.</p>
           <Button asChild variant="outline" className="mt-4">
